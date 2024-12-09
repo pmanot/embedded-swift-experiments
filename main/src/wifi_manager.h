@@ -3,6 +3,9 @@
 
 #include "esp_err.h"
 #include <stdbool.h>
+#include "esp_http_server.h"
+
+extern const httpd_config_t DEFAULT_SERVER_CONFIG;
 
 /**
  * @brief Initialize the WiFi system
@@ -56,13 +59,6 @@ esp_err_t wifi_manager_deinit(void);
  * @return ESP_OK on success, other ESP_ERR_* on failure
  */
 esp_err_t wifi_manager_get_ap_ip(char* ip_addr, size_t buffer_size);
-
-/**
- * @brief Start HTTP server
- * 
- * @return ESP_OK on success, other ESP_ERR_* on failure
- */
-esp_err_t wifi_manager_start_http_server(void);
 
 /**
  * @brief Stop HTTP server

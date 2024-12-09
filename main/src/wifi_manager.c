@@ -58,13 +58,6 @@ static esp_err_t handle_post_request(httpd_req_t *req)
     return ESP_OK;
 }
 
-static const httpd_uri_t post_uri = {
-    .uri       = "/command",
-    .method    = HTTP_POST,
-    .handler   = handle_post_request,
-    .user_ctx  = NULL
-};
-
 esp_err_t wifi_manager_init(void)
 {
     esp_err_t ret = nvs_flash_init();
@@ -189,19 +182,7 @@ esp_err_t wifi_manager_get_ap_ip(char* ip_addr, size_t buffer_size) {
     return ESP_OK;
 }
 
-esp_err_t wifi_manager_start_http_server(void)
-{
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    
-    if (httpd_start(&server, &config) == ESP_OK) {
-        httpd_register_uri_handler(server, &post_uri);
-        ESP_LOGI(TAG, "HTTP server started");
-        return ESP_OK;
-    }
-    
-    ESP_LOGE(TAG, "Failed to start HTTP server");
-    return ESP_FAIL;
-}
+const httpd_config_t DEFAULT_SERVER_CONFIG = HTTPD_DEFAULT_CONFIG();
 
 esp_err_t wifi_manager_stop_http_server(void)
 {

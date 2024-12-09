@@ -12,8 +12,10 @@
 // A simple "overlay" to provide nicer APIs in Swift
 struct LedStrip {
   private let handle: led_strip_handle_t
+
   init(gpioPin: Int, maxLeds: Int) {
     var handle = led_strip_handle_t(bitPattern: 0)
+
     var stripConfig = led_strip_config_t(
       strip_gpio_num: Int32(gpioPin),
       max_leds: UInt32(maxLeds),
@@ -21,14 +23,17 @@ struct LedStrip {
       led_model: LED_MODEL_WS2812,
       flags: .init(invert_out: 0)
     )
+
     var spiConfig = led_strip_spi_config_t(
       clk_src: SPI_CLK_SRC_DEFAULT,
       spi_bus: SPI2_HOST,
       flags: .init(with_dma: 1)
     )
+
     guard led_strip_new_spi_device(&stripConfig, &spiConfig, &handle) == ESP_OK else {
       fatalError("cannot configure spi device")
     }
+
     self.handle = handle!
   }
 
@@ -47,6 +52,5 @@ struct LedStrip {
   }
 
   func refresh() { led_strip_refresh(handle) }
-
   func clear() { led_strip_clear(handle) }
 }

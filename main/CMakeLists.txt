@@ -63,6 +63,9 @@ target_sources(${COMPONENT_LIB}
     PRIVATE
     Main.swift
     LedStrip.swift
+    WiFiManager.swift
+    Server.swift
+    Network.swift
 )
 
 add_custom_command(
