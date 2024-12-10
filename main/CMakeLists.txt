@@ -1,6 +1,6 @@
 # Register the app as an IDF component
 idf_component_register(
-    SRCS "${CMAKE_CURRENT_LIST_DIR}/src/softap_sta.c" "${CMAKE_CURRENT_LIST_DIR}/src/wifi_manager.c" "${CMAKE_CURRENT_LIST_DIR}/src/wifi_manager.h"
+    SRCS "${CMAKE_CURRENT_LIST_DIR}/src/wifi_manager.c" "${CMAKE_CURRENT_LIST_DIR}/src/wifi_manager.h"
     PRIV_INCLUDE_DIRS "." "src"
     REQUIRES esp_wifi nvs_flash esp_http_server
 )
@@ -63,7 +63,6 @@ target_sources(${COMPONENT_LIB}
     PRIVATE
     Main.swift
     LedStrip.swift
-    WiFiManager.swift
     Server.swift
     Network.swift
 )

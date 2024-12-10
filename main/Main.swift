@@ -1,71 +1,40 @@
 @_cdecl("app_main")
 func app_main() {
-    print("Starting WiFi and HTTP server...")
-    let wifiManager = WiFiManager()
-    let server = HTTPServer()
-
     do {
-        // Initialize WiFi first
-        try wifiManager.initialize()
+        let ledStrip = LedStrip(gpioPin: 6, maxLeds: 65)
+        let network = Network()
         
-        let credentials = WiFiCredentials(
-            ssid: "ACT102518899180",
-            password: "70086670"
-        )
-        
-        // Connect to WiFi
-        let connected = try wifiManager.connectToNetwork(credentials)
-        guard connected else {
-            print("Failed to connect to WiFi")
+        guard try network.connect(.b204) else {
+            print("Connection failed")
             return
         }
         
-        print("Successfully connected to WiFi!")
+        let ip = try network.ipAddress()
+        print("Connected: \(ip)")
         
-        // Get and print IP address
-        let ipAddress = try wifiManager.getStationIPAddress()
-        print("Device IP address: \(ipAddress)")
-        
-        // Start HTTP server
-        if let error = server.start() {
-            print("Server failed to start: \(error.code)")
+        let server = HTTPServer()
+        guard server.start() == nil else {
+            print("Server start failed")
             return
         }
         
-        // Register routes
-        if let error = server.register(Route(path: "/led", method: .post) { request in
-            print("LED command received: \(request)")
+        server.register(Route(path: "/led", method: .post) { request in
+            print("LED: \(request)")
+            let color = LedStrip.Color.lightRandom
+            ledStrip.clear()
+            
+            for index in 0..<65 {
+              ledStrip.setPixel(index: index, color: color)
+              ledStrip.refresh()
+            }
+
             return .success(response: "OK")
-        }) {
-            print("Failed to register route: \(error.code)")
-            return
-        }
+        })
         
-        print("HTTP server started successfully")
-        print("You can now send POST requests to http://\(ipAddress)/led")
-        
-        // Keep the task alive
         while true {
             vTaskDelay(500 / (1000 / UInt32(configTICK_RATE_HZ)))
         }
-        
     } catch {
-        print("Error during initialization: \(error)")
+        print("Error: \(error)")
     }
 }
-
-
-
-
-/*
-let credentials = WiFiCredentials(
-  ssid: "B-204",
-  password: "coriolis"
-)
-*/
-/*
-let credentials = WiFiCredentials(
-    ssid: "@manjusstudio",
-    password: "wifi2020!"
-)
-*/

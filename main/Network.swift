@@ -1,15 +1,10 @@
-public enum NetworkError: Int32 {
+public enum NetworkError: Int32, Error {
     case initFailed = 1
     case connectionFailed
     case invalidConfig 
     case httpError
-    
-    var espError: esp_err_t {
-        Int32(rawValue)
-    }
 }
 
-// Network configuration
 public struct NetworkConfig {
     let ssid: String
     let password: String
@@ -19,38 +14,35 @@ public struct NetworkConfig {
         .init(ssid: ssid, password: password, timeout: 10000)
     }
     
-    // Saved configurations
     public static let act = NetworkConfig.wifi("ACT102518899180", "70086670")
     public static let manju = NetworkConfig.wifi("@manjusstudio", "wifi2020!")
     public static let b204 = NetworkConfig.wifi("B-204", "coriolis")
 }
 
-// Main network interface
 public final class Network {
     private var isInitialized = false
-    private let netif: esp_netif_t
+    private var handle: httpd_handle_t?
     
-    public init() throws {
-        guard let netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF") else {
-            throw NetworkError.initFailed
-        }
-        self.netif = netif
-        try initialize()
-    }
+    public init() {}
     
-    private func initialize() throws {
+    public func initialize() throws(NetworkError) {
         guard !isInitialized else { return }
-        guard esp_netif_init() == ESP_OK else {
+        let result = wifi_manager_init()
+        guard result == ESP_OK else {
             throw NetworkError.initFailed
         }
         isInitialized = true
     }
     
-    public func connect(_ config: NetworkConfig) throws -> Bool {
+    public func connect(_ config: NetworkConfig) throws(NetworkError) -> Bool {
+        if !isInitialized {
+            try initialize()
+        }
+        
         var connected = false
         let result = config.ssid.withCString { ssid in
             config.password.withCString { password in
-                wifi_connect(ssid, password, config.timeout, &connected)
+                wifi_manager_connect_sta(ssid, password, config.timeout, &connected)
             }
         }
         
@@ -60,23 +52,87 @@ public final class Network {
         return connected
     }
     
-    public func ipAddress() throws -> String {
+    public func ipAddress() throws(NetworkError) -> String {
+        guard let netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF") else {
+            throw NetworkError.invalidConfig
+        }
+        
         var ipInfo = esp_netif_ip_info_t()
         guard esp_netif_get_ip_info(netif, &ipInfo) == ESP_OK else {
             throw NetworkError.invalidConfig
         }
         
-        let addr = ipInfo.ip.addr
-        return [
-            UInt8(addr & 0xFF),
-            UInt8((addr >> 8) & 0xFF), 
-            UInt8((addr >> 16) & 0xFF),
-            UInt8((addr >> 24) & 0xFF)
-        ].map(String.init).joined(separator: ".")
+        let addr: UInt32 = ipInfo.ip.addr
+        let byte1: UInt8 = UInt8(addr & 0xFF)
+        let byte2: UInt8 = UInt8((addr >> 8) & 0xFF)
+        let byte3: UInt8 = UInt8((addr >> 16) & 0xFF)
+        let byte4: UInt8 = UInt8((addr >> 24) & 0xFF)
+        
+        return "\(byte1).\(byte2).\(byte3).\(byte4)"
     }
     
     deinit {
         guard isInitialized else { return }
-        esp_netif_deinit()
+        _ = wifi_manager_deinit()
+    }
+}
+
+// Access Point
+
+public struct APConfig {
+    let credentials: NetworkConfig
+    let channel: UInt8
+    let maxConnections: UInt8
+    
+    public static func create(
+        _ ssid: String, 
+        password: String = "", 
+        channel: UInt8 = 1,
+        maxConnections: UInt8 = 4
+    ) -> Self {
+        .init(
+            credentials: .wifi(ssid, password),
+            channel: channel,
+            maxConnections: maxConnections
+        )
+    }
+}
+
+public final class APNetwork {
+    let ipAddress: String
+    fileprivate init(ipAddress: String) {
+        self.ipAddress = ipAddress
+    }
+}
+
+extension Network {
+    public func startAP(_ config: APConfig) throws(NetworkError) -> APNetwork {
+        if !isInitialized {
+            try initialize()
+        }
+        
+        let result = config.credentials.ssid.withCString { ssid in
+            config.credentials.password.withCString { password in
+                wifi_manager_start_ap(
+                    ssid,
+                    password,
+                    config.channel,
+                    config.maxConnections
+                )
+            }
+        }
+        
+        guard result == ESP_OK else {
+            throw NetworkError.connectionFailed
+        }
+        
+        let bufferSize = 16
+        var buffer = [CChar](repeating: 0, count: bufferSize)
+        
+        guard wifi_manager_get_ap_ip(&buffer, bufferSize) == ESP_OK else {
+            throw NetworkError.invalidConfig
+        }
+        
+        return APNetwork(ipAddress: String(cString: buffer))
     }
 }

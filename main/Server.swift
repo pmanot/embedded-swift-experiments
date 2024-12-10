@@ -1,89 +1,3 @@
-// First define our error type without using Error protocol
-public struct HTTPError {
-    let code: Int32
-    
-    public static let serverStartFailed = HTTPError(code: 1)
-    public static let serverStopFailed = HTTPError(code: 2)
-    public static let registrationFailed = HTTPError(code: 3)
-}
-
-// Basic HTTP types
-public enum HTTPMethod {
-    case get
-    case post
-    case put
-    case delete
-    
-    var rawValue: httpd_method_t {
-        switch self {
-        case .get: return HTTP_GET
-        case .post: return HTTP_POST
-        case .put: return HTTP_PUT
-        case .delete: return HTTP_DELETE
-        }
-    }
-}
-
-// Type-safe route handler result
-public enum HTTPResult {
-    case success(response: String)
-    case failure
-    
-    var espError: esp_err_t {
-        switch self {
-        case .success: return ESP_OK
-        case .failure: return ESP_FAIL
-        }
-    }
-}
-
-// Route configuration
-public struct Route {
-    let path: String
-    let method: HTTPMethod
-    let handler: (String) -> HTTPResult
-    
-    public init(
-        path: String,
-        method: HTTPMethod,
-        handler: @escaping (String) -> HTTPResult
-    ) {
-        self.path = path
-        self.method = method
-        self.handler = handler
-    }
-}
-
-let ledRoute = Route(
-    path: "/led",
-    method: .post
-) { requestBody in
-    print("Received request: \(requestBody)")
-    return .success(response: "LED command received")
-}
-
-/* ---------- */
-
-public struct ServerConfig {
-    let maxUriHandlers: UInt16
-    let stackSize: Int
-    let maxRespHeaders: UInt16
-    
-    public static let `default` = ServerConfig(
-        maxUriHandlers: 8,
-        stackSize: 4096,
-        maxRespHeaders: 8
-    )
-    
-    var espConfig: httpd_config_t {
-        var config = httpd_config_t()
-        config.max_uri_handlers = maxUriHandlers
-        config.stack_size = stackSize
-        config.max_resp_headers = maxRespHeaders
-        return config
-    }
-}
-
 public final class HTTPServer {
     private var handle: httpd_handle_t?
     private var registeredHandlers: [(Route, UnsafeMutableRawPointer)] = []
@@ -200,6 +114,81 @@ private final class HandlerWrapper {
     let handler: (String) -> HTTPResult
     
     init(handler: @escaping (String) -> HTTPResult) {
+        self.handler = handler
+    }
+}
+
+public struct ServerConfig {
+    let maxUriHandlers: UInt16
+    let stackSize: Int
+    let maxRespHeaders: UInt16
+    
+    public static let `default` = ServerConfig(
+        maxUriHandlers: 8,
+        stackSize: 4096,
+        maxRespHeaders: 8
+    )
+    
+    var espConfig: httpd_config_t {
+        var config = httpd_config_t()
+        config.max_uri_handlers = maxUriHandlers
+        config.stack_size = stackSize
+        config.max_resp_headers = maxRespHeaders
+        return config
+    }
+}
+
+public struct HTTPError {
+    let code: Int32
+    
+    public static let serverStartFailed = HTTPError(code: 1)
+    public static let serverStopFailed = HTTPError(code: 2)
+    public static let registrationFailed = HTTPError(code: 3)
+}
+
+// Basic HTTP types
+public enum HTTPMethod {
+    case get
+    case post
+    case put
+    case delete
+    
+    var rawValue: httpd_method_t {
+        switch self {
+        case .get: return HTTP_GET
+        case .post: return HTTP_POST
+        case .put: return HTTP_PUT
+        case .delete: return HTTP_DELETE
+        }
+    }
+}
+
+// Type-safe route handler result
+public enum HTTPResult {
+    case success(response: String)
+    case failure
+    
+    var espError: esp_err_t {
+        switch self {
+        case .success: return ESP_OK
+        case .failure: return ESP_FAIL
+        }
+    }
+}
+
+// Route configuration
+public struct Route {
+    let path: String
+    let method: HTTPMethod
+    let handler: (String) -> HTTPResult
+    
+    public init(
+        path: String,
+        method: HTTPMethod,
+        handler: @escaping (String) -> HTTPResult
+    ) {
+        self.path = path
+        self.method = method
         self.handler = handler
     }
 }
