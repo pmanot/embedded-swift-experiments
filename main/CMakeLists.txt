@@ -69,8 +69,8 @@ target_sources(${COMPONENT_LIB}
     LedStrip.swift
     Server.swift
     Network.swift
-    JSMNParser.swift
     JSONParser.swift
+    Utilities.swift
 )
 
 add_custom_command(
