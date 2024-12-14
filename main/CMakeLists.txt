@@ -1,6 +1,10 @@
+# Find all source files in src directory
+file(GLOB_RECURSE SRC_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.c" "${CMAKE_CURRENT_LIST_DIR}/src/*.h")
+message("Found source files: ${SRC_FILES}")
+
 # Register the app as an IDF component
 idf_component_register(
-    SRCS "${CMAKE_CURRENT_LIST_DIR}/src/wifi_manager.c" "${CMAKE_CURRENT_LIST_DIR}/src/wifi_manager.h"
+    SRCS ${SRC_FILES}
     PRIV_INCLUDE_DIRS "." "src"
     REQUIRES esp_wifi nvs_flash esp_http_server
 )
@@ -65,6 +69,7 @@ target_sources(${COMPONENT_LIB}
     LedStrip.swift
     Server.swift
     Network.swift
+    JSONParser.swift
 )
 
 add_custom_command(

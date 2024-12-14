@@ -34,22 +34,30 @@ public final class HTTPServer {
         
         let handler: @convention(c) (UnsafeMutablePointer<httpd_req_t>?) -> esp_err_t = { req in
             guard let req = req,
-                  let ctx = req.pointee.user_ctx else { 
+                let ctx = req.pointee.user_ctx else { 
                 return ESP_FAIL 
             }
             
-            let wrapper = Unmanaged<HandlerWrapper>.fromOpaque(ctx)
-                .takeUnretainedValue()
+            let wrapper = Unmanaged<HandlerWrapper>.fromOpaque(ctx).takeUnretainedValue()
             
-            let bufferSize = 100
-            var content = [CChar](repeating: 0, count: bufferSize)
-            let recvSize = min(Int(req.pointee.content_len), bufferSize - 1)
-            
-            guard httpd_req_recv(req, &content, recvSize) > 0 else {
+            let totalLen = Int(req.pointee.content_len)
+            if totalLen <= 0 {
                 return ESP_FAIL
             }
             
-            let requestBody = String(cString: content)
+            var contentBuffer = [CChar](repeating: 0, count: totalLen + 1)
+            var bytesRead = 0
+            while bytesRead < totalLen {
+                let chunkSize = min(512, totalLen - Int(bytesRead))
+                let ret = httpd_req_recv(req, &contentBuffer[bytesRead], chunkSize)
+                if ret <= 0 {
+                    return ESP_FAIL
+                }
+                bytesRead += Int(ret)
+            }
+            // Now contentBuffer holds the entire body
+            let requestBody = String(cString: contentBuffer)
+            
             let result = wrapper.handler(requestBody)
             
             if case .success(let response) = result {
@@ -62,6 +70,7 @@ public final class HTTPServer {
             
             return result.espError
         }
+
         
         var uriHandler = httpd_uri_t(
             uri: uriCString,

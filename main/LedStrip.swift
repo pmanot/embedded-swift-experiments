@@ -45,6 +45,16 @@ struct LedStrip {
       Color(r: .random(in: 0...16), g: .random(in: 0...16), b: .random(in: 0...16))
     }
     static var off = Color(r: 0, g: 0, b: 0)
+
+    init(r: Int, g: Int, b: Int) {
+      self = .init(r: UInt8(r), g: UInt8(g), b: UInt8(b))
+    }
+
+    init(r: UInt8, g: UInt8, b: UInt8) {
+      self.r = r
+      self.g = g
+      self.b = b
+    }
   }
 
   func setPixel(index: Int, color: Color) {

@@ -14,6 +14,7 @@ public struct NetworkConfig {
         .init(ssid: ssid, password: password, timeout: 10000)
     }
     
+    public static let hotspot = NetworkConfig.wifi("Purav's iPhone", "987654321")
     public static let act = NetworkConfig.wifi("ACT102518899180", "70086670")
     public static let manju = NetworkConfig.wifi("@manjusstudio", "wifi2020!")
     public static let b204 = NetworkConfig.wifi("B-204", "coriolis")
