@@ -70,6 +70,7 @@ target_sources(${COMPONENT_LIB}
     Server.swift
     Network.swift
     JSONParser.swift
+    JSONContext.swift
     Utilities.swift
 )
 

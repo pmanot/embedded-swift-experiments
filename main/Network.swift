@@ -18,6 +18,7 @@ public struct NetworkConfig {
     public static let act = NetworkConfig.wifi("ACT102518899180", "70086670")
     public static let manju = NetworkConfig.wifi("@manjusstudio", "wifi2020!")
     public static let b204 = NetworkConfig.wifi("B-204", "coriolis")
+    public static let voyager = NetworkConfig.wifi("Voyager3", "Houston420*")
 }
 
 public final class Network {

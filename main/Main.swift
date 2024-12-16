@@ -2,56 +2,74 @@
 func main() {
     let jsonString = """
     {
-        "simple_array": ["first", "second", "third"],
-        "nums": [1, 2, 3]
+        "top_level_array": ["a", "b", "c"],
+        "nested": {
+            "string_array": ["x", "y", "z"],
+            "number_array": [1, 2, 3],
+            "deep": {
+                "more_strings": ["deep1", "deep2"],
+                "mixed_data": {
+                    "strings": ["mix1", "mix2"],
+                    "numbers": [42, 43]
+                }
+            }
+        },
+        "siblings": {
+            "sibling1": {
+                "data": ["s1a", "s1b"]
+            },
+            "sibling2": {
+                "data": ["s2a", "s2b"]
+            }
+        },
+        "mixed_level": ["top1", "top2"],
+        "complex": {
+            "l1": {
+                "l2": {
+                    "l3": {
+                        "deep_array": ["deep_a", "deep_b"]
+                    }
+                }
+            }
+        }
     }
     """
-    
+
     if let json = parseJson(jsonString) {
-        print("Testing array access...")
-        
-        // First let's try to enter the array and print its length
-        if case .success(let count) = json["simple_array"].enterArray() {
-            print("Array length: \(count)")
-            
-            // Try to get first element directly 
-            do {
-                let first = try json["simple_array"][0].cast(to: String.self)
-                print("First element: \(first)")
-            } catch {
-                print("Failed to get first element using subscript and cast")
-            }
-            
-            // Try using raw array access
-            do {
-                // First get into array context
-                for i in 0..<Int(count) {
-                    let element = try json["simple_array"][i].cast(to: String.self)
-                    print("Element \(i): \(element)")
-                }
-            } catch {
-                print("Failed in array iteration")
-            }
-            
-            _ = json["simple_array"].leaveArray()
-        } else {
-            print("Failed to enter array")
+        print("Testing top level array:")
+        if let topArray = json["top_level_array"].asStringArray() {
+            printArray(topArray)
         }
         
-        // Test with numbers array
-        if case .success(let numCount) = json["nums"].enterArray() {
-            print("Numbers array length: \(numCount)")
-            
-            do {
-                let firstNum = try json["nums"][0].cast(to: Int32.self)
-                print("First number: \(firstNum)")
-            } catch {
-                print("Failed to get first number")
-            }
-            
-            _ = json["nums"].leaveArray()
+        print("Testing first level nested array:")
+        if let nestedArray = json["nested"]["string_array"].asStringArray() {
+            printArray(nestedArray)
         }
-    } else {
-        print("Failed to parse JSON")
+        
+        print("Testing deep nested array:")
+        if let deepArray = json["nested"]["deep"]["more_strings"].asStringArray() {
+            printArray(deepArray)
+        }
+        
+        print("Testing very deep array:")
+        if let veryDeepArray = json["complex"]["l1"]["l2"]["l3"]["deep_array"].asStringArray() {
+            printArray(veryDeepArray)
+        }
+        
+        print("Testing sibling arrays:")
+        if let sibling1 = json["siblings"]["sibling1"]["data"].asStringArray() {
+            printArray(sibling1)
+        }
+        if let sibling2 = json["siblings"]["sibling2"]["data"].asStringArray() {
+            printArray(sibling2)
+        }
+        
+        print("Testing mixed data arrays:")
+        if let mixedStrings = json["nested"]["deep"]["mixed_data"]["strings"].asStringArray() {
+            printArray(mixedStrings)
+        }
+        if let mixedNumbers = json["nested"]["deep"]["mixed_data"]["numbers"].asIntArray() {
+            printArray(mixedNumbers)
+        }
     }
 }
